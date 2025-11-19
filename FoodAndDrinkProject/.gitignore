@@ -1,0 +1,29 @@
+HELP.md
+# Build artifacts
+target/
+build/
+*.jar
+*.war
+*.zip
+
+# IDE specific files
+.idea/
+.vscode/
+.project
+.classpath
+.settings/
+*.iml
+
+# Log files
+*.log
+
+# Dependency caches
+.gradle/
+node_modules/
+
+# Sensitive information (example, adjust as needed)
+application-local.properties
+
+# OS specific files
+.DS_Store
+Thumbs.db
