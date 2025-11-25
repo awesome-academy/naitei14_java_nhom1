@@ -1,13 +1,13 @@
 HELP.md
 # Build artifacts
 target/
+.idea/
 build/
 *.jar
 *.war
 *.zip
 
 # IDE specific files
-.idea/
 .vscode/
 .project
 .classpath
