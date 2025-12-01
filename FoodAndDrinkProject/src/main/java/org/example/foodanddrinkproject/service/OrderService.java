@@ -14,8 +14,6 @@ public interface OrderService {
     List<OrderDto> getMyOrders(Long userId);
     OrderDto getOrderById(Long userId, Long orderId);
 
-
-    // --- ADMIN METHODS ---
     Page<OrderDto> getAllOrders(OrderStatus status, Long userId, Pageable pageable);
     OrderDto updateOrder(Long orderId, AdminUpdateOrderRequest request);
 }
