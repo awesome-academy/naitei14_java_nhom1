@@ -40,6 +40,9 @@ public class User {
     @Column(name = "provider_id")
     private String providerId;
 
+    @Column(name = "is_enabled")
+    private boolean isEnabled = true;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

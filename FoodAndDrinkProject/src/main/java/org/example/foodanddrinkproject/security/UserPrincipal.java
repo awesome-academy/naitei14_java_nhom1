@@ -26,13 +26,16 @@ public class UserPrincipal implements UserDetails, OAuth2User {
     private String password;
     private Collection<? extends GrantedAuthority> authorities;
     private Map<String, Object> attributes; // For OAuth2
+    private boolean isEnabled;
 
-
-    public UserPrincipal(Long id, String email, String fullName, String password, Collection<? extends GrantedAuthority> authorities) {
+    public UserPrincipal(Long id, String email, String fullName, String password,
+                         boolean isEnabled,
+                         Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.email = email;
         this.fullName = fullName;
         this.password = password;
+        this.isEnabled = isEnabled;
         this.authorities = authorities;
     }
 
@@ -48,6 +51,7 @@ public class UserPrincipal implements UserDetails, OAuth2User {
                 user.getEmail(),
                 user.getFullName(),
                 user.getPassword(),
+                user.isEnabled(),
                 authorities
         );
     }
@@ -59,8 +63,6 @@ public class UserPrincipal implements UserDetails, OAuth2User {
         return userPrincipal;
     }
 
-
-    // --- Getters ---
     public Long getId() { return id; }
     public String getFullName() { return fullName; }
 
@@ -86,14 +88,13 @@ public class UserPrincipal implements UserDetails, OAuth2User {
 
 
     @Override
-    public boolean isEnabled() { return true; }
+    public boolean isEnabled() { return isEnabled;}
 
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() { return authorities; }
 
 
-    // --- OAuth2User Methods ---
     @Override
     public Map<String, Object> getAttributes() { return attributes; }
 
@@ -103,4 +104,5 @@ public class UserPrincipal implements UserDetails, OAuth2User {
 
     @Override
     public String getName() { return String.valueOf(id); }
+
 }
