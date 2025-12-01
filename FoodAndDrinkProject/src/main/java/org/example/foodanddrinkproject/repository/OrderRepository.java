@@ -13,7 +13,6 @@ import java.util.List;
 public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecificationExecutor<Order> {
     List<Order> findByUserIdOrderByCreatedAtDesc(Long userId);
 
-    // New Admin Query
     Page<Order> findByOrderStatus(OrderStatus status, Pageable pageable);
 
 }

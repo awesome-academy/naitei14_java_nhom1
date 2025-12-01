@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/admin/orders")
-@PreAuthorize("hasRole('ADMIN')") // Secures the whole controller
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminOrderController {
 
     private final OrderService orderService;
@@ -26,7 +26,7 @@ public class AdminOrderController {
     @GetMapping
     public ResponseEntity<Page<OrderDto>> getAllOrders(
             @RequestParam(required = false) OrderStatus status,
-            @RequestParam(required = false) Long userId, // <--- New Param
+            @RequestParam(required = false) Long userId,
             @ParameterObject @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
         return ResponseEntity.ok(orderService.getAllOrders(status, userId, pageable));
