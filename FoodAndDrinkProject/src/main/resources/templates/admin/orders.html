@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{admin/layout :: layout(~{::div})}">
+<body>
+<div>
+    <h2>Order Management</h2>
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>User</th>
+            <th>Status</th>
+            <th>Total</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="order : ${orders.content}">
+            <td th:text="${order.id}">1</td>
+            <td th:text="${order.orderDate}">2023-01-01</td>
+            <td th:text="${order.id}">User</td> <td>
+            <span class="badge bg-secondary" th:text="${order.orderStatus}">PENDING</span>
+        </td>
+            <td th:text="${order.totalAmount}">$50.00</td>
+            <td>
+                <a href="#" class="btn btn-sm btn-info">View</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div th:if="${orders.totalPages > 1}">
+        Pages:
+        <span th:each="i : ${#numbers.sequence(0, orders.totalPages - 1)}">
+                <a th:href="@{/admin/orders(page=${i})}" th:text="${i + 1}" class="me-2">1</a>
+            </span>
+    </div>
+</div>
+</body>
+</html>

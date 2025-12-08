@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{admin/layout :: layout(~{::div})}">
+<body>
+<div class="container-fluid">
+  <h2 class="mb-4">User Management</h2>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light">
+        <tr>
+          <th>ID</th>
+          <th>User Info</th>
+          <th>Email</th>
+          <th>Provider</th>
+          <th>Phone</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="user : ${users.content}">
+          <td th:text="${user.id}">1</td>
+          <td>
+            <div class="fw-bold" th:text="${user.fullName}">John Doe</div>
+            <div class="text-muted small">Customer</div>
+          </td>
+          <td th:text="${user.email}">john@example.com</td>
+          <td>
+                                <span th:if="${user.authProvider == 'GOOGLE'}" class="badge bg-danger">
+                                    <i class="fab fa-google"></i> Google
+                                </span>
+            <span th:if="${user.authProvider == 'LOCAL'}" class="badge bg-secondary">
+                                    <i class="fas fa-envelope"></i> Local
+                                </span>
+          </td>
+          <td th:text="${user.phoneNumber ?: 'N/A'}">0123456789</td>
+          <td>
+            <span class="badge bg-success">Active</span>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline-warning">Ban User</button>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card-footer d-flex justify-content-between align-items-center" th:if="${users.totalPages > 1}">
+      <small class="text-muted">Showing page [[${users.number + 1}]] of [[${users.totalPages}]]</small>
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item" th:classappend="${users.first} ? 'disabled'">
+            <a class="page-link" th:href="@{/admin/users(page=${users.number - 1})}">Previous</a>
+          </li>
+          <li class="page-item" th:classappend="${users.last} ? 'disabled'">
+            <a class="page-link" th:href="@{/admin/users(page=${users.number + 1})}">Next</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+</body>
+</html>
