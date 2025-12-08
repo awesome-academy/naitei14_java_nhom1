@@ -2,9 +2,9 @@ package org.example.foodanddrinkproject.service.impl;
 
 import java.math.BigDecimal;
 
-import org.example.foodanddrinkproject.dto.CreateProductRequest;
+import jakarta.validation.Valid;
 import org.example.foodanddrinkproject.dto.ProductDto;
-import org.example.foodanddrinkproject.dto.UpdateProductRequest;
+import org.example.foodanddrinkproject.dto.ProductRequest;
 import org.example.foodanddrinkproject.entity.Category;
 import org.example.foodanddrinkproject.entity.Product;
 import org.example.foodanddrinkproject.enums.ProductType;
@@ -27,9 +27,9 @@ public class ProductServiceImpl implements ProductService {
     private final ProductSpecification productSpecification;
     private final CategoryRepository categoryRepository;
 
-    public ProductServiceImpl(ProductRepository productRepository, 
-                             ProductSpecification productSpecification,
-                             CategoryRepository categoryRepository) {
+    public ProductServiceImpl(ProductRepository productRepository,
+                              ProductSpecification productSpecification,
+                              CategoryRepository categoryRepository) {
         this.productRepository = productRepository;
         this.productSpecification = productSpecification;
         this.categoryRepository = categoryRepository;
@@ -39,9 +39,9 @@ public class ProductServiceImpl implements ProductService {
             String name, String brand, Integer categoryId, ProductType type,
             BigDecimal minPrice, BigDecimal maxPrice, Double minRating,
             Pageable pageable
-            ) {
+    ) {
         Specification<Product> spec =
-                        productSpecification.isActive()
+                productSpecification.isActive()
                         .and(productSpecification.hasName(name))
                         .and(productSpecification.hasBrand(brand))
                         .and(productSpecification.hasCategory(categoryId))
@@ -62,12 +62,12 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductDto createProduct(CreateProductRequest request) {
+    public ProductDto createProduct(@Valid ProductRequest request) {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category", "id", request.getCategoryId()));
 
-        if (request.getDiscountPrice() != null && 
-            request.getDiscountPrice().compareTo(request.getPrice()) >= 0) {
+        if (request.getDiscountPrice() != null &&
+                request.getDiscountPrice().compareTo(request.getPrice()) >= 0) {
             throw new BadRequestException("Discount price must be less than regular price");
         }
 
@@ -95,15 +95,15 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductDto updateProduct(Long productId, UpdateProductRequest request) {
+    public ProductDto updateProduct(Long productId, ProductRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
 
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Category", "id", request.getCategoryId()));
 
-        if (request.getDiscountPrice() != null && 
-            request.getDiscountPrice().compareTo(request.getPrice()) >= 0) {
+        if (request.getDiscountPrice() != null &&
+                request.getDiscountPrice().compareTo(request.getPrice()) >= 0) {
             throw new BadRequestException("Discount price must be less than regular price");
         }
 
@@ -132,7 +132,7 @@ public class ProductServiceImpl implements ProductService {
     public void deleteProduct(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
-        
+
         productRepository.delete(product);
     }
 
@@ -141,7 +141,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductDto toggleProductStatus(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
-        
+
         product.setActive(!product.isActive());
         Product updatedProduct = productRepository.save(product);
         return convertToDto(updatedProduct);

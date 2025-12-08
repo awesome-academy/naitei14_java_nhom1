@@ -52,11 +52,4 @@ public class UserController {
         userService.changePassword(currentUser.getId(), request);
         return ResponseEntity.ok(new ApiResponse(true, "Password changed successfully"));
     }
-
-    @GetMapping("/{userId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserProfileDto> getUserById(@PathVariable Long userId) {
-        UserProfileDto userProfile = userService.getUserProfile(userId);
-        return ResponseEntity.ok(userProfile);
-    }
 }

@@ -2,9 +2,9 @@ package org.example.foodanddrinkproject.service;
 
 import java.math.BigDecimal;
 
-import org.example.foodanddrinkproject.dto.CreateProductRequest;
+import jakarta.validation.Valid;
 import org.example.foodanddrinkproject.dto.ProductDto;
-import org.example.foodanddrinkproject.dto.UpdateProductRequest;
+import org.example.foodanddrinkproject.dto.ProductRequest;
 import org.example.foodanddrinkproject.enums.ProductType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,12 +17,12 @@ public interface ProductService {
     );
 
     ProductDto getProductById(Long productId);
-    
-    ProductDto createProduct(CreateProductRequest request);
-    
-    ProductDto updateProduct(Long productId, UpdateProductRequest request);
-    
+
+    ProductDto createProduct(@Valid ProductRequest request);
+
+    ProductDto updateProduct(Long productId, ProductRequest request);
+
     void deleteProduct(Long productId);
-    
+
     ProductDto toggleProductStatus(Long productId);
 }

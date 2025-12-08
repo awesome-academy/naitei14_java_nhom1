@@ -46,4 +46,10 @@ public class AdminUserController {
         String status = enable ? "unbanned" : "banned";
         return ResponseEntity.ok(new ApiResponse(true, "User has been " + status));
     }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserProfileDto> getUserById(@PathVariable Long userId) {
+        UserProfileDto userProfile = userService.getUserProfile(userId);
+        return ResponseEntity.ok(userProfile);
+    }
 }

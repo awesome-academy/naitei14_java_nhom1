@@ -13,7 +13,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class CreateProductRequest {
+public class ProductRequest {
     @NotBlank(message = "Product name is required")
     @Size(max = 255, message = "Product name must not exceed 255 characters")
     private String name;
@@ -34,7 +34,6 @@ public class CreateProductRequest {
     private String imageUrl;
 
     @NotBlank(message = "SKU is required")
-    @Size(max = 100, message = "SKU must not exceed 100 characters")
     private String sku;
 
     @Size(max = 100, message = "Brand must not exceed 100 characters")
