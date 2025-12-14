@@ -27,15 +27,18 @@ public class AdminWebController {
     private final OrderService orderService;
     private final UserService userService;
     private final DashboardService dashboardService;
+    private final ProductSuggestionService suggestionService;
 
     public AdminWebController(ProductService productService, CategoryService categoryService,
                               OrderService orderService, UserService userService,
-                              DashboardService dashboardService) {
+                              DashboardService dashboardService,
+                              ProductSuggestionService suggestionService) {
         this.productService = productService;
         this.categoryService = categoryService;
         this.orderService = orderService;
         this.userService = userService;
         this.dashboardService = dashboardService;
+        this.suggestionService = suggestionService;
     }
 
     @GetMapping("/dashboard")
@@ -146,6 +149,12 @@ public class AdminWebController {
     public String listUsers(Model model, Pageable pageable) {
         model.addAttribute("users", userService.getAllUsers(pageable));
         return "admin/users";
+    }
+
+    @GetMapping("/suggestions")
+    public String listSuggestions(Model model, Pageable pageable) {
+        model.addAttribute("suggestions", suggestionService.getAllSuggestions(pageable));
+        return "admin/suggestions";
     }
 
 
