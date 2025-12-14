@@ -16,6 +16,7 @@ public class OrderDto {
     private Long id;
     private LocalDateTime orderDate;
     private String shippingAddress;
+    private String userEmail;
 
     // Cost Breakdown
     private BigDecimal subtotal;
@@ -30,4 +31,6 @@ public class OrderDto {
     private String transactionId;
 
     private List<OrderItemDto> items;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

@@ -17,6 +17,7 @@ import org.example.foodanddrinkproject.enums.CartStatus;
 import org.example.foodanddrinkproject.enums.OrderStatus;
 import org.example.foodanddrinkproject.enums.PaymentStatus;
 import org.example.foodanddrinkproject.event.OrderPlacedEvent;
+import org.example.foodanddrinkproject.event.OrderStatusChangedEvent;
 import org.example.foodanddrinkproject.exception.BadRequestException;
 import org.example.foodanddrinkproject.exception.ResourceNotFoundException;
 import org.example.foodanddrinkproject.repository.CartRepository;
@@ -154,6 +155,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
 
         OrderStatus oldStatus = order.getOrderStatus();
+        boolean statusChanged = false;
 
         if (request.getOrderStatus() != null) {
             OrderStatus newStatus = request.getOrderStatus();
@@ -161,7 +163,11 @@ public class OrderServiceImpl implements OrderService {
             if (newStatus == OrderStatus.COMPLETED && request.getPaymentStatus() == null) {
                 order.setPaymentStatus(PaymentStatus.PAID);
             }
-            order.setOrderStatus(newStatus);
+            
+            if (!oldStatus.equals(newStatus)) {
+                order.setOrderStatus(newStatus);
+                statusChanged = true;
+            }
         }
 
         if (request.getPaymentStatus() != null) {
@@ -169,7 +175,18 @@ public class OrderServiceImpl implements OrderService {
         }
 
         Order savedOrder = orderRepository.save(order);
-        return convertToDto(savedOrder);
+        OrderDto orderDto = convertToDto(savedOrder);
+        
+        // Publish event if status changed
+        if (statusChanged) {
+            eventPublisher.publishEvent(
+                new OrderStatusChangedEvent(this, orderDto, 
+                    oldStatus.toString(), 
+                    savedOrder.getOrderStatus().toString())
+            );
+        }
+        
+        return orderDto;
     }
 
     private void restoreStock(Order order) {
@@ -187,6 +204,7 @@ public class OrderServiceImpl implements OrderService {
         dto.setId(order.getId());
         dto.setOrderDate(order.getCreatedAt());
         dto.setShippingAddress(order.getShippingAddress());
+        dto.setUserEmail(order.getUser().getEmail());
         dto.setSubtotal(order.getSubtotal());
         dto.setShippingCost(order.getShippingCost());
         dto.setDiscountAmount(order.getDiscountAmount());
