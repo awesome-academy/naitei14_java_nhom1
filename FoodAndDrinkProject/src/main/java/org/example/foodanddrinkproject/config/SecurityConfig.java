@@ -71,6 +71,9 @@ public class SecurityConfig {
 
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
 
+                        // Test endpoints - permitAll for easy testing (remove in production)
+                        .requestMatchers("/admin/test-chatwork", "/admin/test-monthly-stats").permitAll()
+
                         .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
 
                         .requestMatchers("/login").permitAll()

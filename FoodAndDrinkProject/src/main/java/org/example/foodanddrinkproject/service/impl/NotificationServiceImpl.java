@@ -106,7 +106,9 @@ public class NotificationServiceImpl implements NotificationService {
         sb.append("Thank you for your order!\n\n");
         sb.append("Order Details:\n");
         sb.append("Order ID: #").append(order.getId()).append("\n");
-        sb.append("Order Date: ").append(order.getCreatedAt().format(DATE_FORMATTER)).append("\n");
+        if (order.getOrderDate() != null) {
+            sb.append("Order Date: ").append(order.getOrderDate().format(DATE_FORMATTER)).append("\n");
+        }
         sb.append("Status: ").append(order.getOrderStatus()).append("\n");
         sb.append("Payment Method: ").append(order.getPaymentMethod()).append("\n");
         sb.append("Shipping Address: ").append(order.getShippingAddress()).append("\n\n");
@@ -167,7 +169,9 @@ public class NotificationServiceImpl implements NotificationService {
         sb.append("Payment Method: ").append(order.getPaymentMethod()).append("\n");
         sb.append("Payment Status: ").append(order.getPaymentStatus()).append("\n");
         sb.append("Items Count: ").append(order.getItems().size()).append("\n");
-        sb.append("Created At: ").append(order.getCreatedAt().format(DATE_FORMATTER)).append("\n");
+        if (order.getOrderDate() != null) {
+            sb.append("Created At: ").append(order.getOrderDate().format(DATE_FORMATTER)).append("\n");
+        }
         
         return sb.toString();
     }
