@@ -23,6 +23,7 @@ node_modules/
 
 # Sensitive information (example, adjust as needed)
 application-local.properties
+application.properties
 
 # OS specific files
 .DS_Store

@@ -45,12 +45,17 @@
               </td>
               <td>
                 <a th:href="@{/admin/users/edit/{id}(id=${user.id})}" class="btn btn-sm btn-outline-primary">Edit</a>
-                <a th:if="${user.enabled}" th:href="@{/admin/users/delete/{id}(id=${user.id})}"
-                  class="btn btn-sm btn-outline-warning"
-                  onclick="return confirm('Are you sure you want to disable this user?')">Disable</a>
+
+                <a th:if="${user.enabled
+                and user.email != #authentication.name
+                and !#strings.toString(user.roles).contains('ADMIN')}"
+                   th:href="@{/admin/users/delete/{id}(id=${user.id})}"
+                   class="btn btn-sm btn-outline-warning"
+                   onclick="return confirm('Are you sure you want to disable this user?')">Disable</a>
+
                 <a th:if="${!user.enabled}" th:href="@{/admin/users/enable/{id}(id=${user.id})}"
-                  class="btn btn-sm btn-outline-success"
-                  onclick="return confirm('Are you sure you want to enable this user?')">Enable</a>
+                   class="btn btn-sm btn-outline-success"
+                   onclick="return confirm('Are you sure you want to enable this user?')">Enable</a>
               </td>
             </tr>
           </tbody>
