@@ -5,9 +5,11 @@ import org.example.foodanddrinkproject.dto.OrderDto;
 import org.example.foodanddrinkproject.dto.ProductRequest;
 import org.example.foodanddrinkproject.enums.OrderStatus;
 import org.example.foodanddrinkproject.enums.PaymentMethod;
+import org.example.foodanddrinkproject.enums.ProductType;
 import org.example.foodanddrinkproject.scheduler.MonthlyStatisticsScheduler;
 import org.example.foodanddrinkproject.service.*;
 
+import java.math.BigDecimal;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -30,12 +32,14 @@ public class AdminWebController {
     private final DashboardService dashboardService;
     private final ProductSuggestionService suggestionService;
     private final RatingService ratingService;
+    private final FileStorageService fileStorageService;
 
     public AdminWebController(ProductService productService, CategoryService categoryService,
                               OrderService orderService, UserService userService,
                               DashboardService dashboardService,
                               ProductSuggestionService suggestionService,
-                              RatingService ratingService) {
+                              RatingService ratingService,
+                              FileStorageService fileStorageService) {
         this.productService = productService;
         this.categoryService = categoryService;
         this.orderService = orderService;
@@ -43,6 +47,7 @@ public class AdminWebController {
         this.dashboardService = dashboardService;
         this.suggestionService = suggestionService;
         this.ratingService = ratingService;
+        this.fileStorageService = fileStorageService;
     }
 
     @GetMapping("/dashboard")
@@ -82,10 +87,26 @@ public class AdminWebController {
 
 
     @GetMapping("/products")
-    public String listProducts(Model model,
-                               @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+    public String listProducts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Integer categoryId,
+            @RequestParam(required = false) ProductType type,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
+            Model model,
+            @PageableDefault(size = 10, sort = "id", direction = Sort.Direction.DESC) Pageable pageable) {
+        
         model.addAttribute("products", productService.getAllProducts(
-                null, null, null, null, null, null, null, pageable));
+                name, null, categoryId, type, minPrice, maxPrice, null, pageable));
+        
+        // For filter form
+        model.addAttribute("categories", categoryService.getAllCategories());
+        model.addAttribute("filterName", name);
+        model.addAttribute("filterCategoryId", categoryId);
+        model.addAttribute("filterType", type);
+        model.addAttribute("filterMinPrice", minPrice);
+        model.addAttribute("filterMaxPrice", maxPrice);
+        
         return "admin/products";
     }
 
@@ -123,7 +144,16 @@ public class AdminWebController {
 
         if (result.hasErrors()) {
             model.addAttribute("categories", categoryService.getAllCategories());
+            if (id != null) {
+                model.addAttribute("productId", id);
+            }
             return "admin/product-form";
+        }
+
+        // Handle file upload
+        if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
+            String imagePath = fileStorageService.storeFile(request.getImageFile(), "products");
+            request.setImageUrl(imagePath);
         }
 
         if (id != null) {
@@ -144,8 +174,18 @@ public class AdminWebController {
     }
 
     @GetMapping("/orders")
-    public String listOrders(Model model, Pageable pageable) {
-        model.addAttribute("orders", orderService.getAllOrders(null, null, pageable));
+    public String listOrders(
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) Long userId,
+            Model model, 
+            Pageable pageable) {
+        model.addAttribute("orders", orderService.getAllOrders(status, userId, pageable));
+        
+        // For filter form
+        model.addAttribute("orderStatuses", OrderStatus.values());
+        model.addAttribute("filterStatus", status);
+        model.addAttribute("filterUserId", userId);
+        
         return "admin/orders";
     }
 

@@ -1,8 +1,12 @@
 package org.example.foodanddrinkproject.service.impl;
 
 import org.example.foodanddrinkproject.dto.DashboardStatsDto;
+import org.example.foodanddrinkproject.entity.Product;
+import org.example.foodanddrinkproject.entity.Rating;
+import org.example.foodanddrinkproject.enums.OrderStatus;
 import org.example.foodanddrinkproject.repository.OrderRepository;
 import org.example.foodanddrinkproject.repository.ProductRepository;
+import org.example.foodanddrinkproject.repository.RatingRepository;
 import org.example.foodanddrinkproject.repository.UserRepository;
 import org.example.foodanddrinkproject.service.DashboardService;
 import org.slf4j.Logger;
@@ -11,6 +15,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,15 +26,19 @@ import java.util.stream.Collectors;
 public class DashboardServiceImpl implements DashboardService {
 
     private static final Logger logger = LoggerFactory.getLogger(DashboardServiceImpl.class);
+    private static final int LOW_STOCK_THRESHOLD = 10;
     
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final RatingRepository ratingRepository;
 
-    public DashboardServiceImpl(OrderRepository orderRepository, ProductRepository productRepository, UserRepository userRepository) {
+    public DashboardServiceImpl(OrderRepository orderRepository, ProductRepository productRepository, 
+                                UserRepository userRepository, RatingRepository ratingRepository) {
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.ratingRepository = ratingRepository;
     }
 
     @Override
@@ -47,16 +58,98 @@ public class DashboardServiceImpl implements DashboardService {
         Long completedOrders = orderRepository.countCompletedOrders();
         stats.setTotalCompletedOrders(completedOrders != null ? completedOrders : 0L);
         
-        // 4. Get top 5 selling products (all time)
+        // 4. Order status breakdown
+        stats.setPendingOrders(countOrdersByStatus(OrderStatus.PENDING));
+        stats.setProcessingOrders(countOrdersByStatus(OrderStatus.PROCESSING));
+        stats.setCancelledOrders(countOrdersByStatus(OrderStatus.CANCELLED));
+        
+        // 5. Low stock products (threshold: 10)
+        stats.setLowStockProducts(getLowStockProducts(5));
+        
+        // 6. Daily stats for last 7 days (for chart)
+        stats.setDailyStats(getDailyStats(7));
+        
+        // 7. Recent 5 reviews
+        stats.setRecentReviews(getRecentReviews(5));
+        
+        // 8. Get top 5 selling products (all time)
         stats.setTopProducts(getTopProducts(5));
         
-        // 5. Get top 5 customers (all time)
+        // 9. Get top 5 customers (all time)
         stats.setTopCustomers(getTopCustomers(5));
         
         logger.info("📊 Dashboard Stats - Revenue: {}, Completed Orders: {}/{}", 
             stats.getTotalRevenue(), stats.getTotalCompletedOrders(), stats.getTotalOrders());
 
         return stats;
+    }
+    
+    private long countOrdersByStatus(OrderStatus status) {
+        Long count = orderRepository.countByOrderStatus(status);
+        return count != null ? count : 0L;
+    }
+    
+    private List<DashboardStatsDto.LowStockProductDto> getLowStockProducts(int limit) {
+        try {
+            List<Product> products = productRepository.findLowStockProducts(LOW_STOCK_THRESHOLD, PageRequest.of(0, limit));
+            return products.stream().map(p -> {
+                DashboardStatsDto.LowStockProductDto dto = new DashboardStatsDto.LowStockProductDto();
+                dto.setId(p.getId());
+                dto.setName(p.getName());
+                dto.setStockQuantity(p.getStockQuantity());
+                dto.setSku(p.getSku());
+                return dto;
+            }).collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Error fetching low stock products", e);
+            return new ArrayList<>();
+        }
+    }
+    
+    private List<DashboardStatsDto.DailyStatsDto> getDailyStats(int days) {
+        try {
+            LocalDateTime startDate = LocalDateTime.now().minusDays(days);
+            List<Object[]> results = orderRepository.findDailyStats(startDate);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd");
+            
+            return results.stream().map(row -> {
+                DashboardStatsDto.DailyStatsDto dto = new DashboardStatsDto.DailyStatsDto();
+                // Handle different date types from database
+                Object dateObj = row[0];
+                if (dateObj instanceof java.sql.Date) {
+                    dto.setDate(((java.sql.Date) dateObj).toLocalDate().format(formatter));
+                } else if (dateObj instanceof LocalDate) {
+                    dto.setDate(((LocalDate) dateObj).format(formatter));
+                } else {
+                    dto.setDate(dateObj.toString());
+                }
+                dto.setOrderCount(((Number) row[1]).longValue());
+                dto.setRevenue((BigDecimal) row[2]);
+                return dto;
+            }).collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Error fetching daily stats", e);
+            return new ArrayList<>();
+        }
+    }
+    
+    private List<DashboardStatsDto.RecentReviewDto> getRecentReviews(int limit) {
+        try {
+            List<Rating> ratings = ratingRepository.findRecentRatings(PageRequest.of(0, limit));
+            return ratings.stream().map(r -> {
+                DashboardStatsDto.RecentReviewDto dto = new DashboardStatsDto.RecentReviewDto();
+                dto.setProductId(r.getProduct().getId());
+                dto.setProductName(r.getProduct().getName());
+                dto.setCustomerName(r.getUser().getFullName() != null ? r.getUser().getFullName() : r.getUser().getEmail());
+                dto.setRating(r.getRatingValue());
+                dto.setComment(r.getComment());
+                dto.setCreatedAt(r.getCreatedAt());
+                return dto;
+            }).collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Error fetching recent reviews", e);
+            return new ArrayList<>();
+        }
     }
     
     @Override

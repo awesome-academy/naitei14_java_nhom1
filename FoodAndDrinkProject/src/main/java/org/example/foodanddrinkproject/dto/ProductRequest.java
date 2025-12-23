@@ -3,6 +3,7 @@ package org.example.foodanddrinkproject.dto;
 import java.math.BigDecimal;
 
 import org.example.foodanddrinkproject.enums.ProductType;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
@@ -32,6 +33,9 @@ public class ProductRequest {
 
     @Size(max = 512, message = "Image URL must not exceed 512 characters")
     private String imageUrl;
+    
+    // For file upload
+    private MultipartFile imageFile;
 
     @NotBlank(message = "SKU is required")
     private String sku;
@@ -53,3 +57,4 @@ public class ProductRequest {
 
     private Boolean isActive;
 }
+

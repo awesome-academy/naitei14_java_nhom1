@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -93,4 +94,11 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
            "ORDER BY SUM(o.totalAmount) DESC")
     List<Object[]> findTopCustomersByMonth(@Param("month") int month, @Param("year") int year, Pageable pageable);
 
+    // Count orders by status (for dashboard breakdown)
+    Long countByOrderStatus(OrderStatus status);
+    
+    // Daily stats for last N days (for chart)
+    @Query("SELECT CAST(o.createdAt AS DATE) as date, COUNT(o) as orderCount, COALESCE(SUM(o.totalAmount), 0) as revenue " +
+           "FROM Order o WHERE o.createdAt >= :startDate GROUP BY CAST(o.createdAt AS DATE) ORDER BY date ASC")
+    List<Object[]> findDailyStats(@Param("startDate") LocalDateTime startDate);
 }
