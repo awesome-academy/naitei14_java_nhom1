@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/cart")
-@PreAuthorize("hasRole('USER')")
+@PreAuthorize("hasAnyRole('USER', 'ADMIN')")
 public class CartController {
 
     private final CartService cartService;
