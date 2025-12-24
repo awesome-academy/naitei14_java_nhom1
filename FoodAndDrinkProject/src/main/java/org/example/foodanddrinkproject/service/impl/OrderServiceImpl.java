@@ -20,11 +20,14 @@ import org.example.foodanddrinkproject.event.OrderPlacedEvent;
 import org.example.foodanddrinkproject.event.OrderStatusChangedEvent;
 import org.example.foodanddrinkproject.exception.BadRequestException;
 import org.example.foodanddrinkproject.exception.ResourceNotFoundException;
+import org.example.foodanddrinkproject.repository.AddressRepository;
 import org.example.foodanddrinkproject.repository.CartRepository;
 import org.example.foodanddrinkproject.repository.OrderRepository;
 import org.example.foodanddrinkproject.repository.ProductRepository;
 import org.example.foodanddrinkproject.repository.UserRepository;
 import org.example.foodanddrinkproject.repository.specification.OrderSpecification;
+import org.example.foodanddrinkproject.entity.Address;
+import java.util.StringJoiner;
 import org.example.foodanddrinkproject.service.OrderService;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -40,17 +43,20 @@ public class OrderServiceImpl implements OrderService {
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final AddressRepository addressRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     public OrderServiceImpl(OrderRepository orderRepository,
                             CartRepository cartRepository,
                             ProductRepository productRepository,
                             UserRepository userRepository,
+                            AddressRepository addressRepository,
                             ApplicationEventPublisher eventPublisher) {
         this.orderRepository = orderRepository;
         this.cartRepository = cartRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.addressRepository = addressRepository;
         this.eventPublisher = eventPublisher;
     }
 
@@ -67,9 +73,15 @@ public class OrderServiceImpl implements OrderService {
             throw new BadRequestException("Cart is empty. Cannot place order.");
         }
 
+        // Resolve shipping address: either from saved address or from request
+        String shippingAddress = resolveShippingAddress(userId, request);
+        if (shippingAddress == null || shippingAddress.isBlank()) {
+            throw new BadRequestException("Shipping address is required. Provide addressId or shippingAddress.");
+        }
+
         Order order = new Order();
         order.setUser(user);
-        order.setShippingAddress(request.getShippingAddress());
+        order.setShippingAddress(shippingAddress);
         order.setPaymentMethod(request.getPaymentMethod());
         order.setOrderStatus(OrderStatus.PENDING);
         order.setPaymentStatus(PaymentStatus.PENDING);
@@ -161,6 +173,14 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
 
+        // Prevent editing completed or cancelled orders
+        if (order.getOrderStatus() == OrderStatus.COMPLETED) {
+            throw new BadRequestException("Cannot modify a completed order. Completed orders are final for data integrity.");
+        }
+        if (order.getOrderStatus() == OrderStatus.CANCELLED) {
+            throw new BadRequestException("Cannot modify a cancelled order.");
+        }
+
         OrderStatus oldStatus = order.getOrderStatus();
         boolean statusChanged = false;
 
@@ -169,6 +189,11 @@ public class OrderServiceImpl implements OrderService {
 
             if (newStatus == OrderStatus.COMPLETED && request.getPaymentStatus() == null) {
                 order.setPaymentStatus(PaymentStatus.PAID);
+            }
+            
+            // Restore stock when cancelling an order
+            if (newStatus == OrderStatus.CANCELLED && oldStatus != OrderStatus.CANCELLED) {
+                restoreStock(order);
             }
             
             if (!oldStatus.equals(newStatus)) {
@@ -194,6 +219,54 @@ public class OrderServiceImpl implements OrderService {
         }
         
         return orderDto;
+    }
+
+    /**
+     * Resolves shipping address from either a saved address ID or a custom address string.
+     * Priority: addressId > shippingAddress
+     */
+    private String resolveShippingAddress(Long userId, PlaceOrderRequest request) {
+        // Option 1: Use saved address by ID
+        if (request.getAddressId() != null) {
+            Address address = addressRepository.findById(request.getAddressId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Address", "id", request.getAddressId()));
+            
+            // Verify the address belongs to this user
+            if (!address.getUser().getId().equals(userId)) {
+                throw new BadRequestException("Address does not belong to this user.");
+            }
+            
+            // Build full address string
+            return buildFullAddress(address);
+        }
+        
+        // Option 2: Use custom address string
+        return request.getShippingAddress();
+    }
+
+    /**
+     * Builds a comma-separated full address string from Address entity.
+     */
+    private String buildFullAddress(Address address) {
+        StringJoiner joiner = new StringJoiner(", ");
+        
+        if (address.getStreet() != null && !address.getStreet().isBlank()) {
+            joiner.add(address.getStreet());
+        }
+        if (address.getCity() != null && !address.getCity().isBlank()) {
+            joiner.add(address.getCity());
+        }
+        if (address.getState() != null && !address.getState().isBlank()) {
+            joiner.add(address.getState());
+        }
+        if (address.getZipCode() != null && !address.getZipCode().isBlank()) {
+            joiner.add(address.getZipCode());
+        }
+        if (address.getCountry() != null && !address.getCountry().isBlank()) {
+            joiner.add(address.getCountry());
+        }
+        
+        return joiner.toString();
     }
 
     private void restoreStock(Order order) {
