@@ -47,6 +47,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // Note: loadUserById was created in Member A's task
                 UserDetails userDetails = customUserDetailsService.loadUserById(userId);
 
+                // Check if user is enabled (not banned)
+                if (!userDetails.isEnabled()) {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\": \"Your account has been disabled\"}");
+                    return; // Don't proceed with the filter chain
+                }
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());

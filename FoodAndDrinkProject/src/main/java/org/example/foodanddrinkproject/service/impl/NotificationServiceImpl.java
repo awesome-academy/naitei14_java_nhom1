@@ -7,6 +7,7 @@ import org.example.foodanddrinkproject.dto.OrderItemDto;
 import org.example.foodanddrinkproject.service.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -27,13 +28,20 @@ public class NotificationServiceImpl implements NotificationService {
     @Value("${app.admin.email:admin@foodanddrink.com}")
     private String adminEmail;
 
-    public NotificationServiceImpl(JavaMailSender mailSender) {
+    public NotificationServiceImpl(@Autowired(required = false) JavaMailSender mailSender) {
         this.mailSender = mailSender;
+        if (mailSender == null) {
+            logger.warn("JavaMailSender not configured - email notifications will be disabled");
+        }
     }
 
     @Async("asyncExecutor")
     @Override
     public void sendOrderConfirmationEmail(OrderDto order) {
+        if (mailSender == null) {
+            logger.info("Email disabled - skipping order confirmation email for Order ID: {}", order.getId());
+            return;
+        }
         try {
             logger.info("Sending order confirmation email asynchronously to user: {}", order.getUserEmail());
             
@@ -57,6 +65,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Async("asyncExecutor")
     @Override
     public void sendOrderStatusUpdateEmail(OrderDto order, String oldStatus, String newStatus) {
+        if (mailSender == null) {
+            logger.info("Email disabled - skipping status update email for Order ID: {}", order.getId());
+            return;
+        }
         try {
             logger.info("Sending order status update email asynchronously to user: {}", order.getUserEmail());
             
@@ -80,6 +92,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Async("asyncExecutor")
     @Override
     public void sendAdminNotification(OrderDto order) {
+        if (mailSender == null) {
+            logger.info("Email disabled - skipping admin notification for Order ID: {}", order.getId());
+            return;
+        }
         try {
             logger.info("Sending admin notification email asynchronously for Order ID: {}", order.getId());
             

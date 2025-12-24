@@ -54,7 +54,8 @@ public class AdminWebController {
     public String dashboard(Model model) {
         model.addAttribute("stats", dashboardService.getStats());
         model.addAttribute("recentOrders", orderService.getAllOrders(
-                null, null, org.springframework.data.domain.PageRequest.of(0, 5)).getContent());
+                null, null, org.springframework.data.domain.PageRequest.of(0, 5, 
+                    org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"))).getContent());
         return "admin/dashboard";
     }
 
@@ -237,8 +238,12 @@ public class AdminWebController {
     public String updateOrderStatus(@RequestParam Long id, 
                                     @ModelAttribute("orderRequest") org.example.foodanddrinkproject.dto.AdminUpdateOrderRequest request,
                                     RedirectAttributes redirectAttributes) {
-        orderService.updateOrder(id, request);
-        redirectAttributes.addFlashAttribute("success", "Order status updated successfully!");
+        try {
+            orderService.updateOrder(id, request);
+            redirectAttributes.addFlashAttribute("success", "Order status updated successfully!");
+        } catch (org.example.foodanddrinkproject.exception.BadRequestException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/admin/orders/" + id;
     }
 
